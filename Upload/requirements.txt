@@ -1,0 +1,7 @@
+boto3==1.24.68
+halo==0.0.31
+psycopg==3.1.1
+psycopg2-binary==2.9.3
+pymediainfo==5.1.0
+python-dotenv==0.21.0
+
