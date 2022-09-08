@@ -1,0 +1,2 @@
+The Folder S3_Events has a readme that describes how to add a notifaction to minio. And a python file that will log any messages.
+The Upload folder contains a script that will upload .mp4 videos to an S3 bucket.
