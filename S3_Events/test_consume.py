@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import pika
+import sys
 
 # Change the credentials
 # Can't use enviroment variables?
-amqp_host = "change me"
+amqp_host = ""
 amqp_port = 0
 ampq_credentials = pika.PlainCredentials("", "")  # Username, Password
 
@@ -16,7 +17,7 @@ channel = connection.channel()
 
 channel.exchange_declare(exchange="bucketevents", exchange_type="topic")
 
-result = channel.queue_declare(exclusive=True)
+result = channel.queue_declare(exclusive=True, queue='')
 queue_name = result.method.queue
 
 binding_keys = sys.argv[1:]
