@@ -9,6 +9,7 @@ import psycopg2
 # Required for checking for metadata tracks
 from pymediainfo import MediaInfo
 # Helps genenerate a unique filename
+import base64
 import datetime
 import time
 import uuid
@@ -62,28 +63,22 @@ def load_files():
     allfiles = os.listdir(dir)
 
     mp4files = [fname for fname in allfiles if fname.endswith(".mp4")]
-    valid_mp4 = []
+    valid_mp4, invalid_mp4 = [], []
 
     for file in mp4files:
         try:
-            tracks = MediaInfo.parse(file).tracks
-        except:
-            print(colored_text("Please install media-info, https://mediaarea.net/en/MediaInfo or brew install media-info", "error"))
-            exit(-1)
-        # There should be four tracks
-        # 0:0 - General - Metadata
-        # 0:1 - Video
-        # 0:2 - Audio
-        # 0:3 - Other - GoPro Telemetry
-        for track in tracks:
-            if track.track_type == "General":
-                # Go from UTC timestamp to unix time, convert to int then string to remove trailing .0
-                unix_time = str(int(time.mktime(datetime.datetime.strptime(track.encoded_date, "UTC %Y-%m-%d %H:%M:%S").timetuple())))
-            if track.track_type == "Other" and track.type == "meta":
+            other_track = MediaInfo.parse(file).other_tracks[0]
+            # Seems like if it has a mdhd_duration, it is not a real gpmf stream
+            if not other_track.mdhd_duration:
+                encode_date = (MediaInfo.parse(file).general_tracks[0].encoded_date)
+                unix_time = str(int(time.mktime(datetime.datetime.strptime(encode_date, "UTC %Y-%m-%d %H:%M:%S").timetuple())))
                 valid_mp4.append([file, unix_time])
-                mp4files.remove(file)
-    
-    return (valid_mp4, mp4files)
+            else:
+                invalid_mp4.append(file)
+        except:
+            invalid_mp4.append(file)
+
+    return (valid_mp4, invalid_mp4)
 
 @Halo(text='Checking if project exists', spinner='dots')
 def does_project_exist_on_db(country, city, project):
@@ -116,7 +111,9 @@ def upload_to_s3(files, country, city, project):
     bucket = "v360video"
 
     for file in files:
-        filename = str(uuid.uuid4()) + "_" + file[1] + ".mp4"
+        id = base64.urlsafe_b64encode(uuid.uuid4().bytes).rstrip(b'=').decode('ascii')
+        timestamp = file[1]
+        filename = f"{id}_{timestamp}.mp4"
         try:
             obj = f"{country}/{city}/{project}/{filename}"
             s3_client.upload_file(file[0], bucket, obj)
