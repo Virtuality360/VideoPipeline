@@ -69,13 +69,15 @@ def load_files():
     for file in mp4files:
         try:
             other_track = MediaInfo.parse(file).other_tracks[0]
-            # Seems like if it has a mdhd_duration, it is not a real gpmf stream
-            if not other_track.mdhd_duration:
+            # if the duration of the other track (GPMF) is less than one second
+            # it is probably empty -> created during the 360 to mp4 process
+            # usually around 400 ms - 1000 to be safe
+            if other_track.duration < 1000:
+                invalid_mp4.append(file)
+            else:
                 encode_date = (MediaInfo.parse(file).general_tracks[0].encoded_date)
                 unix_time = str(int(time.mktime(datetime.datetime.strptime(encode_date, "UTC %Y-%m-%d %H:%M:%S").timetuple())))
                 valid_mp4.append([file, unix_time])
-            else:
-                invalid_mp4.append(file)
         except:
             invalid_mp4.append(file)
 
@@ -144,15 +146,16 @@ def main():
     valid_files, invalid_files = load_files()
 
 
-    print(colored_text(f"The files: {', '.join([item[0] for item in valid_files])} will be uploaded to the minio bucket v360videos/{country}/{city}/{project}."))
-    print(colored_text(f"{invalid_files} will not be uploaded - they have no gpmf track.", "warning"))
+    print(colored_text(f"The file(s): {', '.join([item[0] for item in valid_files])} will be uploaded to the minio bucket v360videos/{country}/{city}/{project}."))
+    print(colored_text(f"The file(s): {', '.join([item for item in invalid_files])} will not be uploaded - the GPMF track is less than 1 second long.", "warning"))
+    #print(colored_text(f"{invalid_files} will not be uploaded - the GPMF track is less than 1 second.", "warning"))
     ans = input(colored_text(f"Proceed (Y/N)? ")).upper()
 
     if ans != 'Y':
         print(colored_text("Exiting process"))
         exit()
 
-    upload_to_s3(valid_files, country, city, project)
+    #upload_to_s3(valid_files, country, city, project)
 
 if __name__ == "__main__":
     main()
