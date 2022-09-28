@@ -13,6 +13,7 @@ import base64
 import datetime
 import time
 import uuid
+import zlib
 # Required for the spinner
 from halo import Halo
 # Required to load the connection credentials
@@ -80,6 +81,14 @@ def load_files():
 
     return (valid_mp4, invalid_mp4)
 
+def crc32(filename, chunksize=65536):
+    """Compute the CRC-32 checksum of the contents of the given filename"""
+    with open(filename, "rb") as f:
+        checksum = 0
+        while (chunk := f.read(chunksize)) :
+            checksum = zlib.crc32(chunk, checksum)
+        return checksum
+
 @Halo(text='Checking if project exists', spinner='dots')
 def does_project_exist_on_db(country, city, project):
     """
@@ -99,6 +108,7 @@ def upload_to_s3(files, country, city, project):
     """
     Uploads all files in the files list to a s3 bucket
     under the object country/city/project
+    Videos are uploaded with the naming scheme: {crc32}_{timestamp}.mp4
     """
 
     S3_HOST_URL = "http://localhost:9000"
@@ -111,9 +121,7 @@ def upload_to_s3(files, country, city, project):
     bucket = "v360video"
 
     for file in files:
-        id = base64.urlsafe_b64encode(uuid.uuid4().bytes).rstrip(b'=').decode('ascii')
-        timestamp = file[1]
-        filename = f"{id}_{timestamp}.mp4"
+        filename = f"{crc32(file[0]):x}_{file[1]}.mp4"
         try:
             obj = f"{country}/{city}/{project}/{filename}"
             s3_client.upload_file(file[0], bucket, obj)
