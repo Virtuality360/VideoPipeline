@@ -155,7 +155,7 @@ def main():
         print(colored_text("Exiting process"))
         exit()
 
-    #upload_to_s3(valid_files, country, city, project)
+    upload_to_s3(valid_files, country, city, project)
 
 if __name__ == "__main__":
     main()
