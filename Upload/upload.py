@@ -2,17 +2,17 @@
 
 # Required for file handling
 import os.path
+import json
 # Required for connecting to the s3 bucket
 import boto3
+import pika
 # Required for querying the database
 import psycopg2
 # Required for checking for metadata tracks
 from pymediainfo import MediaInfo
 # Helps genenerate a unique filename
-import base64
 import datetime
 import time
-import uuid
 import zlib
 # Required for the spinner
 from halo import Halo
@@ -53,6 +53,22 @@ def colored_text(text, type = "normal"):
         case _:
             color = ""
     return f"{color}{text}{TERM_COLORS.RESET}"
+
+def amqp_conn():
+    amqp_host = "prodportainer1.server.internal"
+    amqp_port = 5672
+    ampq_credentials = pika.PlainCredentials("admin", "password")  # Username, Password
+
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters(
+            host=amqp_host, port=amqp_port, credentials=ampq_credentials
+        )
+    )
+    channel = connection.channel()
+
+    channel.exchange_declare(exchange="bucketevents", exchange_type="topic")
+
+    return channel
 
 def load_files():
     """
@@ -106,7 +122,7 @@ def does_project_exist_on_db(country, city, project):
             else:
                 return True
 
-def upload_to_s3(files, country, city, project):
+def upload_to_s3(files, country, city, project, fps, priority):
     """
     Uploads all files in the files list to a s3 bucket
     under the object country/city/project
@@ -119,7 +135,8 @@ def upload_to_s3(files, country, city, project):
         endpoint_url=S3_HOST_URL,
         config=boto3.session.Config(signature_version='s3v4')
     )
-    
+    channel = amqp_conn()
+
     bucket = "v360video"
 
     for file in files:
@@ -127,8 +144,11 @@ def upload_to_s3(files, country, city, project):
         try:
             obj = f"{country}/{city}/{project}/{filename}"
             s3_client.upload_file(file[0], bucket, obj)
+            msg_body = json.dumps({"bucket": bucket, "path": f"/{country}/{city}/{project}/", "filename": filename, "fps": fps, "priority": priority})
+            channel.basic_publish(exchange="videoPipeline", routing_key="initialUpload", body=str(msg_body), properties=pika.BasicProperties(priority=priority))
         except Exception as e:
             print(colored_text(e, "error"))
+    channel.close()
 
 def main():
     """
@@ -137,25 +157,26 @@ def main():
     country = input(colored_text("What country are we working on? ")).upper()
     city = input(colored_text("What city are we in? ")).upper()
     project = input(colored_text("And what is the project name/number? ")).upper()
-
+    
     if not does_project_exist_on_db(country, city, project):
         ans = input(colored_text(f"{country}/{city}/{project} does not currently exist. Continue anyways? (Y/N) ", "warning")).upper()
         if(ans == "N"):
             exit(-1)
 
-    valid_files, invalid_files = load_files()
+    fps = float(input(colored_text("How many frames per second? ")))
+    priority = int(input(colored_text("Is this low(0), medium(1), or high priority(2)? Enter the number. ")))
 
+    valid_files, invalid_files = load_files()
 
     print(colored_text(f"The file(s): {', '.join([item[0] for item in valid_files])} will be uploaded to the minio bucket v360videos/{country}/{city}/{project}."))
     print(colored_text(f"The file(s): {', '.join([item for item in invalid_files])} will not be uploaded - the GPMF track is less than 1 second long.", "warning"))
-    #print(colored_text(f"{invalid_files} will not be uploaded - the GPMF track is less than 1 second.", "warning"))
     ans = input(colored_text(f"Proceed (Y/N)? ")).upper()
 
     if ans != 'Y':
         print(colored_text("Exiting process"))
         exit()
 
-    upload_to_s3(valid_files, country, city, project)
+    upload_to_s3(valid_files, country, city, project, fps, priority)
 
 if __name__ == "__main__":
     main()
