@@ -145,7 +145,7 @@ def upload_to_s3(files, country, city, project, fps, priority):
             obj = f"{country}/{city}/{project}/{filename}"
             s3_client.upload_file(file[0], bucket, obj)
             msg_body = json.dumps({"bucket": bucket, "path": f"/{country}/{city}/{project}/", "filename": filename, "fps": fps, "priority": priority})
-            channel.basic_publish(exchange="videoPipeline", routing_key="initialUpload", body=str(msg_body), properties=pika.BasicProperties(priority=priority))
+            amqp_conn().basic_publish(exchange="videoPipeline", routing_key="initialUpload", body=str(msg_body), properties=pika.BasicProperties(priority=priority))
         except Exception as e:
             print(colored_text(e, "error"))
     channel.close()
