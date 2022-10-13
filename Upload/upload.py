@@ -160,7 +160,7 @@ def main():
     
     if not does_project_exist_on_db(country, city, project):
         ans = input(colored_text(f"{country}/{city}/{project} does not currently exist. Continue anyways? (Y/N) ", "warning")).upper()
-        if(ans == "N"):
+        if(ans != "Y"):
             exit(-1)
 
     fps = float(input(colored_text("How many frames per second? ")))
