@@ -6,8 +6,6 @@ import json
 # Required for connecting to the s3 bucket
 import boto3
 import pika
-# Required for querying the database
-import psycopg2
 # Required for checking for metadata tracks
 from pymediainfo import MediaInfo
 # Helps genenerate a unique filename
@@ -129,7 +127,7 @@ def upload_to_s3(files, country, city, project, fps, priority):
     Videos are uploaded with the naming scheme: {crc32}_{timestamp}.mp4
     """
 
-    S3_HOST_URL = "http://localhost:9000"
+    S3_HOST_URL = "http://storage3.server.internal:9000"
 
     s3_client = boto3.client('s3',
         endpoint_url=S3_HOST_URL,
