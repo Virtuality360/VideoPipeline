@@ -142,7 +142,7 @@ def upload_to_s3(files, country, city, project, fps, priority):
         filename = f"{file[0]}_{crc32(file[1]):x}.mp4"
         try:
             obj = f"{country}/{city}/{project}/{filename}"
-            s3_client.upload_file(file[0], bucket, obj)
+            s3_client.upload_file(file[1], bucket, obj)
             msg_body = json.dumps({"bucket": bucket, "path": f"/{country}/{city}/{project}/", "filename": filename, "fps": fps, "priority": priority})
             amqp_conn().basic_publish(exchange="videoPipeline", routing_key="initialUpload", body=str(msg_body), properties=pika.BasicProperties(priority=priority))
         except Exception as e:
@@ -167,7 +167,7 @@ def main():
 
     valid_files, invalid_files = load_files()
 
-    print(colored_text(f"The file(s): {', '.join([item[1] for item in valid_files])} will be uploaded to the minio bucket v360videos/{country}/{city}/{project}."))
+    print(colored_text(f"The file(s): {', '.join([item[1] for item in valid_files])} will be uploaded to the minio bucket v360mp4-upload/{country}/{city}/{project}."))
     print(colored_text(f"The file(s): {', '.join([item for item in invalid_files])} will not be uploaded - the GPMF track is less than 1 second long.", "warning"))
     ans = input(colored_text(f"Proceed (Y/N)? ")).upper()
 
