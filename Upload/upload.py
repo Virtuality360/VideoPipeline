@@ -89,9 +89,10 @@ def load_files():
             if other_track.duration < 1000:
                 invalid_mp4.append(file)
             else:
-                encode_date = (MediaInfo.parse(file).general_tracks[0].encoded_date)
-                unix_time = str(int(time.mktime(datetime.datetime.strptime(encode_date, "UTC %Y-%m-%d %H:%M:%S").timetuple())))
-                valid_mp4.append([file, unix_time])
+                date_raw = (MediaInfo.parse(file).general_tracks[0].encoded_date)
+                date_obj = datetime.datetime.strptime(date_raw, "UTC %Y-%m-%d %H:%M:%S").strftime("%Y%m%d")
+                #unix_time = str(int(time.mktime(datetime.datetime.strptime(encode_date, "UTC %Y-%m-%d %H:%M:%S").timetuple())))
+                valid_mp4.append([date_obj, file])
         except:
             invalid_mp4.append(file)
 
@@ -135,10 +136,10 @@ def upload_to_s3(files, country, city, project, fps, priority):
     )
     channel = amqp_conn()
 
-    bucket = "v360video"
+    bucket = "v360mp4-upload"
 
     for file in files:
-        filename = f"{crc32(file[0]):x}_{file[1]}.mp4"
+        filename = f"{file[0]}_{crc32(file[1]):x}.mp4"
         try:
             obj = f"{country}/{city}/{project}/{filename}"
             s3_client.upload_file(file[0], bucket, obj)
@@ -166,7 +167,7 @@ def main():
 
     valid_files, invalid_files = load_files()
 
-    print(colored_text(f"The file(s): {', '.join([item[0] for item in valid_files])} will be uploaded to the minio bucket v360videos/{country}/{city}/{project}."))
+    print(colored_text(f"The file(s): {', '.join([item[1] for item in valid_files])} will be uploaded to the minio bucket v360videos/{country}/{city}/{project}."))
     print(colored_text(f"The file(s): {', '.join([item for item in invalid_files])} will not be uploaded - the GPMF track is less than 1 second long.", "warning"))
     ans = input(colored_text(f"Proceed (Y/N)? ")).upper()
 
