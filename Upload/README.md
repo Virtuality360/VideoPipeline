@@ -1,7 +1,11 @@
 # Installing
+Enviroment Requirements: Have python3, pip, and MediaInfo installed.
+
+In the command line, from the folder containing upload.py and requirments.txt, run `pip install -r requirements.txt`
+
 MediaInfo is required for this program to run properly.
 If you get an error asking you to install media-info, you can do so by
-installing via https://mediaarea.net/en/MediaInfo (any device) or with brew install media-info (Macs only).
+installing via https://mediaarea.net/en/MediaInfo (any device) or with `brew install media-info` (Macs only).
 
 Add the program location to your PATH variable
  - (Mac) open your .zshrc file with "open ~/.zshrc" and add the line "export PATH=$PATH:/PATH/TO/FOLDER/CONTAINING/PROGRAM" to it

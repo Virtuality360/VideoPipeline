@@ -147,6 +147,7 @@ def upload_to_s3(files, country, city, project, fps, priority):
             amqp_conn().basic_publish(exchange="videoPipeline", routing_key="initialUpload", body=str(msg_body), properties=pika.BasicProperties(priority=priority))
         except Exception as e:
             print(colored_text(e, "error"))
+            print(f"May have failed to upload {str(msg_body)} to RabbitMQ")
     channel.close()
 
 def main():
