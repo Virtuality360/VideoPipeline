@@ -93,7 +93,8 @@ def load_files():
                 date_obj = datetime.datetime.strptime(date_raw, "UTC %Y-%m-%d %H:%M:%S").strftime("%Y%m%d")
                 #unix_time = str(int(time.mktime(datetime.datetime.strptime(encode_date, "UTC %Y-%m-%d %H:%M:%S").timetuple())))
                 valid_mp4.append([date_obj, file])
-        except:
+        except Exception as e:
+            print(colored_text(e, "error"))
             invalid_mp4.append(file)
 
     return (valid_mp4, invalid_mp4)
@@ -154,26 +155,26 @@ def main():
     """
     Function to run when this file is run as a script
     """
-    country = input(colored_text("What country are we working on? ")).upper()
-    city = input(colored_text("What city are we in? ")).upper()
-    project = input(colored_text("And what is the project name/number? ")).upper()
+    country = input("What country are we working on? ").upper()
+    city = input("What city are we in? ").upper()
+    project = input("And what is the project name/number? ").upper()
     
     if not does_project_exist_on_db(country, city, project):
         ans = input(colored_text(f"{country}/{city}/{project} does not currently exist. Continue anyways? (Y/N) ", "warning")).upper()
         if(ans != "Y"):
             exit(-1)
 
-    fps = float(input(colored_text("How many frames per second? ")))
-    priority = int(input(colored_text("Is this low(0), medium(1), or high priority(2)? Enter the number. ")))
+    fps = float(input("How many frames per second? "))
+    priority = int(input("Is this low(0), medium(1), or high priority(2)? Enter the number. "))
 
     valid_files, invalid_files = load_files()
 
-    print(colored_text(f"The file(s): {', '.join([item[1] for item in valid_files])} will be uploaded to the minio bucket v360mp4-upload/{country}/{city}/{project}."))
+    print(f"The file(s): {', '.join([item[1] for item in valid_files])} will be uploaded to the minio bucket v360mp4-upload/{country}/{city}/{project}.")
     print(colored_text(f"The file(s): {', '.join([item for item in invalid_files])} will not be uploaded - the GPMF track is less than 1 second long.", "warning"))
-    ans = input(colored_text(f"Proceed (Y/N)? ")).upper()
+    ans = input(f"Proceed (Y/N)? ").upper()
 
     if ans != 'Y':
-        print(colored_text("Exiting process"))
+        print("Exiting process")
         exit()
 
     upload_to_s3(valid_files, country, city, project, fps, priority)
