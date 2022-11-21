@@ -140,11 +140,11 @@ def upload_to_s3(files, country, city, project, fps, priority):
     bucket = "v360mp4-upload"
 
     for file in files:
-        filename = f"{file[0]}_{crc32(file[1]):x}.mp4"
+        filename = f"{file[0]}_{crc32(file[1]):x}_{file[1].split('.')[0]}.mp4"
         try:
             obj = f"{country}/{city}/{project}/{filename}"
             s3_client.upload_file(file[1], bucket, obj)
-            msg_body = json.dumps({"bucket": bucket, "path": f"/{country}/{city}/{project}/", "filename": filename, "fps": fps, "priority": priority})
+            msg_body = json.dumps({"bucket": bucket, "path": f"/{country}/{city}/{project}/", "filename": filename, "fps": fps, "priority": priority, "originalFile": file[1]})
             amqp_conn().basic_publish(exchange="videoPipeline", routing_key="initialUpload", body=str(msg_body), properties=pika.BasicProperties(priority=priority))
         except Exception as e:
             print(colored_text(e, "error"))
