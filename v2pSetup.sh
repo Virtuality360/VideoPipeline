@@ -21,7 +21,7 @@ sudo echo "PGHOST=db1.server.internal" >> Upload/.env;
 sudo echo "PGPORT=5432" >> Upload/.env;
 python3 -m pip install --upgrade pip;
 pip3 install -r /usr/local/bin/Upload/requirements.txt;
-echo "export PATH=$PATH:/usr/local/bin/Upload/)" >> /Users/$USER/.zshrc;
+echo 'export PATH="$PATH:/usr/local/bin/Upload/"' >> /Users/$USER/.zshrc;
 curl https://owncloud.myaesportal.com/s/evlhxLrYMoXzvx8/download --output ~/Downloads/Extract-me-app-pipeline.zip;
 sudo unzip ~/Downloads/Extract-me-app-pipeline.zip -d ~;
 
