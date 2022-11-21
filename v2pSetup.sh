@@ -27,5 +27,5 @@ sudo unzip ~/Downloads/Extract-me-app-pipeline.zip -d ~;
 
 echo "\n";
 echo "Now open /usr/local/bin/Upload/.env to enter the credentials for minio and postgres.";
-echo "In a terminal, go to ~/Downloads/extract-me-prod/src and run npm i as well as npm start"
-echo "Afterwards, you can run the upload script with Upload/upload.py"
+echo "In a terminal, go to ~/Downloads/extract-me-prod/src and run npm i as well as npm start";
+echo "Afterwards, you can run the upload script with Upload/upload.py";
